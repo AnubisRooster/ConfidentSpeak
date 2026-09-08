@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct RecordingView: View {
     @StateObject private var viewModel: RecordingViewModel

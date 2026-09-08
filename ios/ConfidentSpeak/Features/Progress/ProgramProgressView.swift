@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct ProgramProgressView: View {
     @StateObject private var viewModel: ProgramProgressViewModel
