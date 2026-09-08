@@ -12,8 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Use the runner's default Xcode rather than pinning an old version:
+      # a current Homebrew `xcodegen` writes project files in a format only
+      # a matching-or-newer Xcode can open (pinning to an older Xcode here
+      # previously failed with "future Xcode project file format").
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Show Xcode version
+        run: xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -22,12 +29,18 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
+      # Pick the latest available iOS runtime/device pair rather than a
+      # hardcoded name, since exact simulator availability varies by runner
+      # image.
       - name: Run unit tests
         working-directory: ios
         run: |
+          RUNTIME=$(xcrun simctl list runtimes | grep -Eo 'iOS [0-9.]+' | sort -V | tail -1 | sed 's/iOS //')
+          DEVICE=$(xcrun simctl list devices available | grep -Eo 'iPhone [0-9]+ Pro' | head -1)
+          echo "Using simulator: $DEVICE ($RUNTIME)"
           xcodebuild test \
             -project ConfidentSpeak.xcodeproj \
             -scheme ConfidentSpeak \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -destination "platform=iOS Simulator,name=$DEVICE,OS=$RUNTIME" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="-"
