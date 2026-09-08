@@ -1,0 +1,87 @@
+name: iOS Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      # /Applications/Xcode.app (the runner's default symlink) can lag
+      # behind the newest Xcode actually installed on the image (observed:
+      # default -> 15.4 while 16.1/16.2 were also present) — current
+      # Homebrew `xcodegen` writes pbxproj object version 77, documented in
+      # XcodeGen's own changelog as "the correct object version for Xcode
+      # 16 projects", so an older default rejects it as a "future" format.
+      # Select the newest `Xcode_*.app` actually installed rather than
+      # trusting the default symlink or hardcoding one version.
+      - name: Select Xcode
+        run: |
+          LATEST_XCODE=$(python3 -c "
+          import glob, os
+          paths = glob.glob('/Applications/Xcode_*.app')
+          def key(p):
+              version = os.path.basename(p)[len('Xcode_'):-len('.app')]
+              return tuple(int(part) for part in version.split('.'))
+          print(sorted(paths, key=key)[-1])
+          ")
+          echo "Selecting $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      # Pick a device that actually exists at the newest available iOS
+      # runtime, rather than pairing the newest runtime with a hardcoded
+      # device name — not every device model gets a simulator built for
+      # every runtime (e.g. this runner has no "iPhone 15 Pro" at the
+      # newest iOS 18.2 runtime, only at older ones), so the two must be
+      # picked together from the same "-- iOS X.Y --" section.
+      - name: Run unit tests
+        working-directory: ios
+        run: |
+          SIM_PICK=$(python3 -c "
+          import re, subprocess
+          output = subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available'], text=True)
+          current_runtime = None
+          candidates = []
+          for line in output.splitlines():
+              header = re.match(r'-- iOS ([\d.]+) --', line)
+              if header:
+                  current_runtime = header.group(1)
+                  continue
+              if current_runtime is None:
+                  continue
+              m = re.match(r'\s*(iPhone[\w() -]*?)\s*\(', line)
+              if m:
+                  version = tuple(int(p) for p in current_runtime.split('.'))
+                  candidates.append((version, m.group(1).strip(), current_runtime))
+          candidates.sort(key=lambda c: c[0], reverse=True)
+          best_version = candidates[0][0]
+          same_version = [c for c in candidates if c[0] == best_version]
+          preferred = next((c for c in same_version if 'Pro' in c[1] and 'Max' not in c[1]), same_version[0])
+          print(f'{preferred[1]}|{preferred[2]}')
+          ")
+          # Device names can contain spaces (e.g. "iPhone 15 Pro Max"), so
+          # split on the '|' delimiter above rather than word-splitting.
+          DEVICE="${SIM_PICK%|*}"
+          RUNTIME="${SIM_PICK##*|}"
+          echo "Using simulator: $DEVICE ($RUNTIME)"
+          xcodebuild test \
+            -project ConfidentSpeak.xcodeproj \
+            -scheme ConfidentSpeak \
+            -destination "platform=iOS Simulator,name=$DEVICE,OS=$RUNTIME" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="-"
