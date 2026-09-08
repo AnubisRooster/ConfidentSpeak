@@ -20,6 +20,15 @@ final class SettingsViewModel: ObservableObject {
         hasStoredKey = keychain.hasKey(for: provider)
     }
 
+    /// Reloads provider/model from storage — used on appear so a pick made in
+    /// `OpenRouterModelPickerView` (which writes `FeedbackSettings` directly)
+    /// is reflected as soon as the Settings screen is shown again.
+    func reloadFromStorage() {
+        provider = FeedbackSettings.provider
+        model = FeedbackSettings.model
+        refreshKeyStatus()
+    }
+
     /// Called when the user picks a different provider — each provider has
     /// its own stored key and model, so both need to be reloaded.
     func providerChanged() {

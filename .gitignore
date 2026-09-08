@@ -6,3 +6,4 @@ DerivedData/
 ios/ConfidentSpeak.xcodeproj/
 ios/build/
 *.xcuserstate
+graphify-out/

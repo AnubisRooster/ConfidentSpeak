@@ -3,9 +3,11 @@ import Foundation
 import BYOKLLMKit
 @testable import ConfidentSpeak
 
-/// `FeedbackSettings` reads/writes `UserDefaults.standard`, so each test
-/// captures and restores the prior values to avoid leaking state between
-/// test runs (Swift Testing may run these in parallel with other suites).
+/// `FeedbackSettings` reads/writes `UserDefaults.standard`, so these tests
+/// capture and restore the prior values AND run serially — otherwise parallel
+/// execution makes the shared `UserDefaults` writes race each other and
+/// randomly fail (confirmed flaky before this annotation).
+@Suite(.serialized)
 struct FeedbackSettingsTests {
     private func withRestoredSettings(_ body: () throws -> Void) rethrows {
         let originalProvider = FeedbackSettings.provider

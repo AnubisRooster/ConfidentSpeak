@@ -38,11 +38,31 @@ struct SettingsView: View {
                     Text("Get a key from \(viewModel.provider.keyHint). Without a key, drills still record, transcribe, and score locally — only the coach-feedback step is skipped.")
                 }
 
-                Section("Model") {
+                Section {
+                    if viewModel.provider == .openrouter {
+                        NavigationLink {
+                            OpenRouterModelPickerView()
+                        } label: {
+                            HStack {
+                                Text("Model")
+                                Spacer()
+                                Text(viewModel.model)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
                     TextField(viewModel.provider.exampleModelID, text: $viewModel.model)
                         .autocorrectionDisabled()
                         .onSubmit { viewModel.saveModel() }
+                } header: {
+                    Text("Model")
+                } footer: {
+                    if viewModel.provider == .openrouter {
+                        Text("Tap to pick from free OpenRouter models (text + speech first). Or type any model ID directly.")
+                    }
                 }
+                .onAppear { viewModel.reloadFromStorage() }
 
                 if let status = viewModel.statusMessage {
                     Section {

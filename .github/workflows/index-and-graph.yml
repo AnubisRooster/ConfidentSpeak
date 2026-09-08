@@ -1,0 +1,55 @@
+name: Index & Graph
+
+# Rebuilds the GitNexus knowledge graph and the graphify code graph on every
+# merge into main (and on every PR, as a freshness check). Both outputs
+# (.gitnexus/ and graphify-out/) are gitignored by design — GitNexus stores a
+# binary KuzuDB index and graphify writes generated HTML/JSON — so this job
+# re-derives them from the merged tree and fails loudly if either tool can't
+# index the code. Local mirrors stay current via the repo's git hooks
+# (scripts/refresh-intelligence.sh wires the post-commit/post-merge hooks).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install GitNexus
+        run: npm install -g gitnexus
+
+      - name: Install graphify
+        run: |
+          pipx install graphifyy
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build GitNexus index
+        run: gitnexus analyze
+        env:
+          PYTHONHASHSEED: "0"
+
+      - name: Verify GitNexus index
+        run: node .gitnexus/run.cjs status
+
+      - name: Build graphify graph (code-only, no API key)
+        run: |
+          graphify . --code-only
+          graphify cluster-only . --no-label
+
+      - name: Verify graphify outputs
+        run: |
+          test -f graphify-out/graph.json
+          test -f graphify-out/GRAPH_REPORT.md
+          test -f graphify-out/graph.html
+          echo "graphify graph OK: $(node -e 'const g=require("./graphify-out/graph.json"); console.log(g.nodes.length + " nodes, " + g.edges.length + " edges")')"
+        env:
+          PYTHONHASHSEED: "0"
