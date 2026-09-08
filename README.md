@@ -19,13 +19,14 @@ access.
 - `Audio/Transcriber.swift` — on-device `SFSpeechRecognizer` wrapper
 - `Analysis/SpeechMetrics.swift` — WPM / filler-word / pause calculation, no LLM
 - `Feedback/FeedbackEngine.swift` — LLM feedback via OnDeviceKit's
-  `BYOKLLMKit` (`LLMService`/`LLMSending`), defaulting to OpenRouter
+  `BYOKLLMKit` (`LLMService`/`LLMSending`), provider/model resolved from
+  `Feedback/FeedbackSettings.swift` (defaults to OpenRouter)
 - `Features/DayList`, `Features/DayDetail`, `Features/Recording`,
-  `Features/Progress` — the SwiftUI screens and view models wiring the
-  pipeline together: record → transcribe → compute metrics → optional LLM
-  feedback → save `PracticeSession`
+  `Features/Progress`, `Features/Settings` — the SwiftUI screens and view
+  models wiring the pipeline together: record → transcribe → compute
+  metrics → optional LLM feedback → save `PracticeSession`
 - `App/ConfidentSpeakApp.swift`, `App/ContentView.swift` — app entry point and
-  the two-tab (`Program` / `Progress`) root view
+  the three-tab (`Program` / `Progress` / `Settings`) root view
 
 ## Setup
 
@@ -34,12 +35,11 @@ access.
    (also runs automatically as an Xcode pre-build step, and in CI).
 3. Open `ios/ConfidentSpeak.xcodeproj` in Xcode 15+, set a development team
    for signing, and run on an iOS 17+ simulator or device.
-4. In Settings on a real provider you use with `BYOKLLMKit`'s
-   `LLMKeychainStore`, set an OpenRouter (or other supported provider) API
-   key — e.g. `LLMKeychainStore.shared.set("sk-...", for: .openrouter)` from a
-   debug console, until this app grows its own settings screen. Without a
-   key, drills still record/transcribe/score locally; `FeedbackEngine`
-   is skipped rather than erroring (`FeedbackEngine.isConfigured()`).
+4. In the app's **Settings** tab, pick a provider and paste in its API key
+   (stored via `BYOKLLMKit`'s `LLMKeychainStore`, never in `UserDefaults`).
+   Without a key, drills still record/transcribe/score locally;
+   `FeedbackEngine` is skipped rather than erroring
+   (`FeedbackEngine.isConfigured()`).
 
 `ios/Package.swift` also lets `swift build`/`swift test` resolve the same
 sources and dependencies directly, mirroring the `CompyPal`/`Companion`
@@ -51,10 +51,11 @@ Speech need the iOS SDK).
 
 `ios/ConfidentSpeakTests` uses Swift Testing (`@Test`/`#expect`, matching
 `CompyPal`'s `CompanionTests`), covering `SpeechMetrics`, `ProgramContent`,
-the `AppDatabase` GRDB queries (against an in-memory `DatabaseQueue`), and
-`FeedbackEngine` (against a mock `LLMSending`, so no network call runs in
-tests). CI (`.github/workflows/ios-tests.yml`) generates the Xcode project
-with XcodeGen and runs the suite on an iOS Simulator.
+the `AppDatabase` GRDB queries (against an in-memory `DatabaseQueue`),
+`FeedbackSettings`'s `UserDefaults` round-trip, and `FeedbackEngine`
+(against a mock `LLMSending`, so no network call runs in tests). CI
+(`.github/workflows/ios-tests.yml`) generates the Xcode project with
+XcodeGen and runs the suite on an iOS Simulator.
 
 ## Known gap to design around
 
@@ -76,8 +77,7 @@ clip).
 ## Status
 
 First pass at all the SwiftUI screens and wiring described in the original
-scaffold. Not yet run on a device/simulator — the pipeline (`Recorder` →
-`Transcriber` → `SpeechMetrics` → `FeedbackEngine` → `PracticeSession`)
-should be exercised end-to-end there before treating this as done, and the
-app currently has no in-app way to enter a provider API key (see Setup
-above for the console workaround).
+scaffold, plus a Settings screen for provider/key/model. Not yet run on a
+device/simulator — the pipeline (`Recorder` → `Transcriber` →
+`SpeechMetrics` → `FeedbackEngine` → `PracticeSession`) should be exercised
+end-to-end there before treating this as done.

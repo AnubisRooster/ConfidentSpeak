@@ -12,8 +12,8 @@ struct FeedbackEngine {
 
     init(
         llmService: LLMSending = LLMService.shared,
-        provider: LLMProvider = .openrouter,
-        model: String = LLMProvider.openrouter.exampleModelID
+        provider: LLMProvider = FeedbackSettings.provider,
+        model: String = FeedbackSettings.model
     ) {
         self.llmService = llmService
         self.provider = provider
