@@ -81,3 +81,8 @@ scaffold, plus a Settings screen for provider/key/model. Not yet run on a
 device/simulator — the pipeline (`Recorder` → `Transcriber` →
 `SpeechMetrics` → `FeedbackEngine` → `PracticeSession`) should be exercised
 end-to-end there before treating this as done.
+
+No app icon yet — `project.yml` explicitly blanks
+`ASSETCATALOG_COMPILER_APPICON_NAME` so CI/local builds don't fail looking
+for one. Add an `AppIcon.appiconset` under `Resources/Assets.xcassets` and
+restore that setting before any TestFlight/App Store build.
