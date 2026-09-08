@@ -12,12 +12,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Use the runner's default Xcode rather than pinning an old version:
-      # a current Homebrew `xcodegen` writes project files in a format only
-      # a matching-or-newer Xcode can open (pinning to an older Xcode here
-      # previously failed with "future Xcode project file format").
+      # /Applications/Xcode.app (the runner's default symlink) can lag
+      # behind the newest Xcode actually installed on the image (observed:
+      # default -> 15.4 while 16.1/16.2 were also present) — current
+      # Homebrew `xcodegen` writes pbxproj object version 77, documented in
+      # XcodeGen's own changelog as "the correct object version for Xcode
+      # 16 projects", so an older default rejects it as a "future" format.
+      # Select the newest `Xcode_*.app` actually installed rather than
+      # trusting the default symlink or hardcoding one version.
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        run: |
+          LATEST_XCODE=$(python3 -c "
+          import glob, os
+          paths = glob.glob('/Applications/Xcode_*.app')
+          def key(p):
+              version = os.path.basename(p)[len('Xcode_'):-len('.app')]
+              return tuple(int(part) for part in version.split('.'))
+          print(sorted(paths, key=key)[-1])
+          ")
+          echo "Selecting $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE"
 
       - name: Show Xcode version
         run: xcodebuild -version
