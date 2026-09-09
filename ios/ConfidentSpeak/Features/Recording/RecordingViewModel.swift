@@ -84,7 +84,7 @@ final class RecordingViewModel: ObservableObject {
             metrics = computedMetrics
 
             var feedback: String?
-            if FeedbackEngine.isConfigured(provider: feedbackEngine.provider) {
+            if feedbackEngine.isConfigured() {
                 stage = .gettingFeedback
                 feedback = try? await feedbackEngine.generateFeedback(
                     day: day,

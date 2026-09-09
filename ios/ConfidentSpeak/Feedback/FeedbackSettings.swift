@@ -8,6 +8,21 @@ import BYOKLLMKit
 enum FeedbackSettings {
     private static let providerKey = "feedback_provider"
     private static let modelKey = "feedback_model"
+    private static let localModelKey = "feedback_local_model"
+
+    /// Non-nil puts the coach-feedback step into fully-on-device mode using the
+    /// selected on-device model (`apple-foundation` or a downloaded GGUF id).
+    /// Nil uses `provider`/`model` and the cloud LLM service.
+    static var localModelID: String? {
+        get { UserDefaults.standard.string(forKey: localModelKey) }
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue, forKey: localModelKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: localModelKey)
+            }
+        }
+    }
 
     static var provider: LLMProvider {
         get {

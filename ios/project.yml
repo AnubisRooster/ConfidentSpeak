@@ -45,6 +45,8 @@ targets:
       - package: GRDB
       - package: OnDeviceKit
         product: BYOKLLMKit
+      - package: OnDeviceKit
+        product: LocalLLMKit
     preBuildScripts:
       - name: "Regenerate XcodeGen"
         script: |
