@@ -38,7 +38,9 @@ access.
 - `Features/DayList`, `Features/DayDetail`, `Features/Recording`,
   `Features/Progress`, `Features/Settings` — the SwiftUI screens and view
   models wiring the pipeline together: record → transcribe → compute
-  metrics → optional LLM feedback → save `PracticeSession`
+  metrics → optional LLM feedback → save `PracticeSession`. The Progress tab
+  trends parsed LLM quality scores (`Session`s → `N/10`) as a bar chart over
+  the 14 days, alongside WPM/filler averages.
 - `App/ConfidentSpeakApp.swift`, `App/ContentView.swift` — app entry point and
   the three-tab (`Program` / `Progress` / `Settings`) root view
 

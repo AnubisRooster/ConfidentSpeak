@@ -113,6 +113,7 @@ final class RecordingViewModel: ObservableObject {
                 fillerWordCount: computedMetrics.fillerWordCount,
                 pauseCount: computedMetrics.pauseCount,
                 llmFeedback: feedback,
+                qualityScore: feedback.flatMap(FeedbackEngine.parseScore),
                 reflectionNote: reflectionNote.isEmpty ? nil : reflectionNote,
                 recordingDurationSeconds: recordingDuration,
                 recordingPath: clipPath,

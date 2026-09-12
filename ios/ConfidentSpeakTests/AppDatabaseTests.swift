@@ -61,4 +61,35 @@ struct AppDatabaseTests {
         #expect(loaded?.recordingPath == "ABC.m4a")
         #expect(loaded?.recordingDurationSeconds == 12.5)
     }
+
+    @Test func qualityScorePersists() async throws {
+        let database = try makeDatabase()
+        let session = PracticeSession(
+            day: 5,
+            lessonKey: "storytelling",
+            llmFeedback: "Score: 9/10\nStrengths: ...",
+            qualityScore: 9,
+            completedAt: Date()
+        )
+        let saved = try await database.save(session)
+
+        let loaded = try await database.dbWriter.read { db in
+            try PracticeSession.fetchOne(db, key: saved.id!)
+        }
+        #expect(loaded?.qualityScore == 9)
+        #expect(loaded?.displayedScore == 9)
+    }
+
+    @Test func displayedScoreFallsBackToParsingFeedbackText() throws {
+        let legacy = PracticeSession(
+            day: 6,
+            lessonKey: "confidence",
+            llmFeedback: "Score: 7/10\nImprovement: ...",
+            qualityScore: nil
+        )
+        #expect(legacy.displayedScore == 7)
+
+        let unscored = PracticeSession(day: 7, lessonKey: "confidence")
+        #expect(unscored.displayedScore == nil)
+    }
 }

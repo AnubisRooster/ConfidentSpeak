@@ -14,6 +14,9 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
     var fillerWordCount: Int?
     var pauseCount: Int?
     var llmFeedback: String?
+    /// Parsed `N/10` quality rating from the LLM feedback, stored separately so
+    /// the Progress tab can trend performance over time without re-parsing.
+    var qualityScore: Int?
     var reflectionNote: String?
     var recordingDurationSeconds: Double?
     var recordingPath: String?
@@ -33,6 +36,7 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
         fillerWordCount: Int? = nil,
         pauseCount: Int? = nil,
         llmFeedback: String? = nil,
+        qualityScore: Int? = nil,
         reflectionNote: String? = nil,
         recordingDurationSeconds: Double? = nil,
         recordingPath: String? = nil,
@@ -47,6 +51,7 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
         self.fillerWordCount = fillerWordCount
         self.pauseCount = pauseCount
         self.llmFeedback = llmFeedback
+        self.qualityScore = qualityScore
         self.reflectionNote = reflectionNote
         self.recordingDurationSeconds = recordingDurationSeconds
         self.recordingPath = recordingPath
@@ -58,6 +63,12 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
 // MARK: - Convenience queries
 
 extension PracticeSession {
+    /// Score for display: the stored column, falling back to parsing the
+    /// feedback text for sessions saved before the `qualityScore` migration.
+    var displayedScore: Int? {
+        qualityScore ?? llmFeedback.flatMap(FeedbackEngine.parseScore)
+    }
+
     static func latest(forDay day: Int, db: Database) throws -> PracticeSession? {
         try PracticeSession
             .filter(Column("day") == day)

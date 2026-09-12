@@ -45,6 +45,12 @@ final class AppDatabase {
             }
         }
 
+        migrator.registerMigration("v3_addQualityScore") { db in
+            try db.alter(table: "practice_session") { t in
+                t.add(column: "qualityScore", .integer)
+            }
+        }
+
         return migrator
     }
 

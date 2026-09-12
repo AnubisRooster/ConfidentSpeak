@@ -32,6 +32,21 @@ final class ProgramProgressViewModel: ObservableObject {
         return Double(values.reduce(0, +)) / Double(values.count)
     }
 
+    /// Sessions with a parsed LLM quality score, in program-day order, so the
+    /// Progress tab can show how performance trends across the 14 days.
+    var scoredSessions: [(session: PracticeSession, score: Int)] {
+        completedSessions.compactMap { session in
+            session.displayedScore.map { (session, $0) }
+        }
+    }
+
+    /// Average of the parsed quality scores; `nil` when nothing is scored yet.
+    var averageQualityScore: Double? {
+        let values = scoredSessions.map(\.score)
+        guard !values.isEmpty else { return nil }
+        return Double(values.reduce(0, +)) / Double(values.count)
+    }
+
     func refresh() async {
         isLoading = true
         defer { isLoading = false }
