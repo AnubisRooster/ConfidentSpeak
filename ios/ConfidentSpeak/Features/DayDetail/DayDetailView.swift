@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DayDetailView: View {
     @StateObject private var viewModel: DayDetailViewModel
+    @StateObject private var playback = PlaybackPlayer()
     let database: AppDatabase
 
     init(day: ProgramDay, database: AppDatabase) {
@@ -51,6 +52,17 @@ struct DayDetailView: View {
             }
             if let feedback = session.llmFeedback {
                 Text(feedback).font(.callout)
+            }
+            if let url = RecordingStore.shared.url(forRelativePath: session.recordingPath) {
+                Button {
+                    playback.toggle(url: url)
+                } label: {
+                    Label(
+                        playback.isPlaying ? "Stop playback" : "Play recording",
+                        systemImage: playback.isPlaying ? "stop.circle.fill" : "play.circle.fill"
+                    )
+                }
+                .buttonStyle(.bordered)
             }
             if let note = session.reflectionNote, !note.isEmpty {
                 Text(note).font(.callout).italic()

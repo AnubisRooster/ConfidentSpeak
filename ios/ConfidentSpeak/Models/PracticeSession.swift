@@ -16,6 +16,7 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
     var llmFeedback: String?
     var reflectionNote: String?
     var recordingDurationSeconds: Double?
+    var recordingPath: String?
     var completedAt: Date?
     var createdAt: Date
 
@@ -34,6 +35,7 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
         llmFeedback: String? = nil,
         reflectionNote: String? = nil,
         recordingDurationSeconds: Double? = nil,
+        recordingPath: String? = nil,
         completedAt: Date? = nil,
         createdAt: Date = Date()
     ) {
@@ -47,6 +49,7 @@ struct PracticeSession: Codable, Equatable, FetchableRecord, MutablePersistableR
         self.llmFeedback = llmFeedback
         self.reflectionNote = reflectionNote
         self.recordingDurationSeconds = recordingDurationSeconds
+        self.recordingPath = recordingPath
         self.completedAt = completedAt
         self.createdAt = createdAt
     }

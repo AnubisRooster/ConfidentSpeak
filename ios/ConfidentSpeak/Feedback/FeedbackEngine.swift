@@ -51,12 +51,17 @@ struct FeedbackEngine {
         }
     }
 
-    /// Kept short and specific — one drill-worthy observation, not generic praise.
+    /// Scores the performance 0-10 and adds one drill-worthy observation.
     private let systemPrompt = """
     You are a concise speaking coach. Given objective speech metrics and a \
-    transcript, give exactly one specific, actionable piece of feedback in \
-    1-2 sentences. Reference the actual numbers. No generic encouragement, \
-    no more than one suggestion.
+    transcript, rate the drill performance and give concrete feedback in \
+    exactly this format:
+
+    Score: <N>/10
+    Strengths: <one sentence referencing the actual numbers>
+    Improvement: <exactly one specific, actionable suggestion>
+
+    Keep each line to one sentence. No generic encouragement, no extra text.
     """
 
     @MainActor
@@ -94,6 +99,21 @@ struct FeedbackEngine {
             model: model,
             messages: messages
         )
+    }
+
+    // MARK: - Score extraction
+
+    /// Pulls a "Score: N/10" (or bare "N/10") rating out of free-form LLM
+    /// feedback so the UI can show a badge. Tolerant of small-model drift.
+    static func parseScore(from feedback: String) -> Int? {
+        let pattern = #"\b(\d{1,2})\s*/\s*10\b"#
+        guard let range = feedback.range(of: pattern, options: .regularExpression) else {
+            return nil
+        }
+        guard let number = Int(feedback[range].split(separator: "/")[0].trimmingCharacters(in: .whitespaces)) else {
+            return nil
+        }
+        return min(max(number, 1), 10)
     }
 
     // MARK: - On-device inference

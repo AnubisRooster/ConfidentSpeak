@@ -2,7 +2,8 @@
 
 A standalone iOS app for a 14-day speaking-confidence program: record a short
 practice clip against each day's drill, get objective pace/filler/pause
-metrics plus one specific piece of LLM feedback, and track progress across
+metrics plus an LLM quality score and specific feedback, replay your own
+recording, and track progress across
 the program. Built alongside [CompyPal](https://github.com/AnubisRooster/CompyPal)
 and [therAIpist](https://github.com/AnubisRooster/therAIpist), depending on
 [OnDeviceKit](https://github.com/AnubisRooster/OnDeviceKit) (ODK) for BYOK LLM
@@ -16,12 +17,18 @@ access.
   convenience API (`latestSessionsByDay`, `completedSessions`, `save`) that
   the view models call
 - `Audio/Recorder.swift` — AVFoundation recording wrapper
+- `Audio/RecordingStore.swift` — persists clips to `Documents/recordings/` so
+  every attempt can be replayed later (relative `recordingPath` on each session)
+- `Audio/PlaybackPlayer.swift` — replay of saved clips via `AVAudioPlayer`
 - `Audio/Transcriber.swift` — on-device `SFSpeechRecognizer` wrapper
 - `Analysis/SpeechMetrics.swift` — WPM / filler-word / pause calculation, no LLM
 - `Feedback/FeedbackEngine.swift` — LLM feedback via OnDeviceKit's
   `BYOKLLMKit` (`LLMService`/`LLMSending`), provider/model resolved from
   `Feedback/FeedbackSettings.swift` (defaults to OpenRouter); routes to
-  on-device inference when a local model is selected (`FeedbackSettings.localModelID`)
+  on-device inference when a local model is selected (`FeedbackSettings.localModelID`).
+  Feedback now scores the performance `N/10` plus one strength and one
+  improvement line; `FeedbackEngine.parseScore(from:)` surfaces the rating
+  as a badge in the drill UI.
 - `Features/Local/LocalModelService.swift` — curated on-device model catalog
   (Apple Intelligence + GGUF via `OnDeviceKit`'s `LocalLLMKit`/llama.cpp) with
   download/cancel/delete and `Documents/models/` storage

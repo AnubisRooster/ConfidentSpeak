@@ -20,6 +20,15 @@ final class RecordingViewModel: ObservableObject {
     @Published private(set) var transcript: String?
     @Published private(set) var metrics: SpeechMetrics?
     @Published private(set) var llmFeedback: String?
+    /// Relative `Documents/recordings/` filename of the last completed clip.
+    @Published private(set) var recordedClipPath: String?
+
+    var recorderError: Recorder.RecorderError? { recorder.lastError }
+
+    /// URL of the last clip for immediate post-record playback, when one exists.
+    var playbackURL: URL? {
+        RecordingStore.shared.url(forRelativePath: recordedClipPath)
+    }
 
     let day: ProgramDay
     private let database: AppDatabase
@@ -54,7 +63,6 @@ final class RecordingViewModel: ObservableObject {
 
     var isRecording: Bool { recorder.isRecording }
     var currentDuration: TimeInterval { recorder.currentDuration }
-    var recorderError: Recorder.RecorderError? { recorder.lastError }
 
     func startRecording() async {
         stage = .recording
@@ -94,6 +102,9 @@ final class RecordingViewModel: ObservableObject {
             }
             llmFeedback = feedback
 
+            let clipPath = RecordingStore.shared.persistRecording(from: fileURL)
+            recordedClipPath = clipPath
+
             let session = PracticeSession(
                 day: day.id,
                 lessonKey: day.lessonKey,
@@ -104,6 +115,7 @@ final class RecordingViewModel: ObservableObject {
                 llmFeedback: feedback,
                 reflectionNote: reflectionNote.isEmpty ? nil : reflectionNote,
                 recordingDurationSeconds: recordingDuration,
+                recordingPath: clipPath,
                 completedAt: Date()
             )
             let saved = try await database.save(session)
@@ -139,6 +151,7 @@ final class RecordingViewModel: ObservableObject {
         transcript = nil
         metrics = nil
         llmFeedback = nil
+        recordedClipPath = nil
         reflectionNote = ""
     }
 }

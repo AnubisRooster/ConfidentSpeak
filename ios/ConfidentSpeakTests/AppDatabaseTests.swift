@@ -43,4 +43,22 @@ struct AppDatabaseTests {
         let latestByDay = try await database.latestSessionsByDay()
         #expect(latestByDay.isEmpty)
     }
+
+    @Test func recordingPathSurvivesSaveAndRoundTrip() async throws {
+        let database = try makeDatabase()
+        let session = PracticeSession(
+            day: 4,
+            lessonKey: "pitch",
+            recordingDurationSeconds: 12.5,
+            recordingPath: "ABC.m4a",
+            completedAt: Date()
+        )
+        let saved = try await database.save(session)
+
+        let loaded = try await database.dbWriter.read { db in
+            try PracticeSession.fetchOne(db, key: saved.id!)
+        }
+        #expect(loaded?.recordingPath == "ABC.m4a")
+        #expect(loaded?.recordingDurationSeconds == 12.5)
+    }
 }

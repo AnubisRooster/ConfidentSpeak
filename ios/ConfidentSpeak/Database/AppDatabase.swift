@@ -39,6 +39,12 @@ final class AppDatabase {
             try db.create(index: "idx_practice_session_day", on: "practice_session", columns: ["day"])
         }
 
+        migrator.registerMigration("v2_addRecordingPath") { db in
+            try db.alter(table: "practice_session") { t in
+                t.add(column: "recordingPath", .text)
+            }
+        }
+
         return migrator
     }
 

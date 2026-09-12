@@ -3,6 +3,7 @@ import Foundation
 
 struct RecordingView: View {
     @StateObject private var viewModel: RecordingViewModel
+    @StateObject private var playback = PlaybackPlayer()
     @Environment(\.dismiss) private var dismiss
     let onSaved: () -> Void
 
@@ -106,9 +107,26 @@ struct RecordingView: View {
             if let feedback = viewModel.llmFeedback {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Coach feedback").font(.headline)
+                    if let score = FeedbackEngine.parseScore(from: feedback) {
+                        Text("Quality: \(score)/10").font(.title3.bold())
+                            .foregroundStyle(score >= 7 ? .green : score >= 4 ? .orange : .red)
+                    }
                     Text(feedback)
                 }
                 .font(.callout)
+            }
+
+            if let url = viewModel.playbackURL {
+                Button {
+                    playback.toggle(url: url)
+                } label: {
+                    Label(
+                        playback.isPlaying ? "Stop playback" : "Play recording",
+                        systemImage: playback.isPlaying ? "stop.circle.fill" : "play.circle.fill"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 4)
             }
 
             reflectionField
