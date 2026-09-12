@@ -34,4 +34,22 @@ struct ProgramProgressViewModelTests {
         #expect(viewModel.scoredSessions.isEmpty)
         #expect(viewModel.averageQualityScore == nil)
     }
+
+    @Test func scoredOverTimeSortsChronologicallyNotByDay() async throws {
+        let early = Date(timeIntervalSince1970: 1000)
+        let later = Date(timeIntervalSince1970: 3000)
+        let viewModel = try await makeViewModel(sessions: [
+            PracticeSession(day: 2, lessonKey: "second", qualityScore: 5, completedAt: early),
+            PracticeSession(day: 1, lessonKey: "first", qualityScore: 8, completedAt: later),
+            PracticeSession(day: 1, lessonKey: "first", qualityScore: 7, completedAt: Date(timeIntervalSince1970: 2000)),
+        ])
+
+        let points = viewModel.scoredOverTime
+        #expect(points.count == 3)
+        #expect(points[0].date == early)
+        #expect(points[0].score == 5)
+        #expect(points[2].score == 8)
+        #expect(points.last?.date == later)
+        #expect(Set(points.map(\.id)).count == 3)
+    }
 }

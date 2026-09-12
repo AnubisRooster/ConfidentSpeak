@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Charts
 
 struct ProgramProgressView: View {
     @StateObject private var viewModel: ProgramProgressViewModel
@@ -33,6 +34,14 @@ struct ProgramProgressView: View {
                 }
             }
 
+            if !viewModel.scoredOverTime.isEmpty {
+                Section("Score over time") {
+                    ScoreChart(points: viewModel.scoredOverTime, average: viewModel.averageQualityScore)
+                    .frame(height: 220)
+                    .padding(.vertical, 4)
+                }
+            }
+
             if !viewModel.scoredSessions.isEmpty {
                 Section("Quality trend") {
                     ForEach(viewModel.scoredSessions, id: \.session.id) { item in
@@ -58,30 +67,66 @@ struct ProgramProgressView: View {
     }
 }
 
+private func qualityColor(_ score: Int) -> Color {
+    score >= 7 ? .green : score >= 4 ? .orange : .red
+}
+
+private struct ScoreChart: View {
+    let points: [ScorePoint]
+    let average: Double?
+
+    var body: some View {
+        Chart {
+            ForEach(points) { point in
+                LineMark(
+                    x: .value("Date", point.date),
+                    y: .value("Score", point.score)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(.blue)
+
+                PointMark(
+                    x: .value("Date", point.date),
+                    y: .value("Score", point.score)
+                )
+                .foregroundStyle(qualityColor(point.score))
+            }
+
+            if let average {
+                RuleMark(y: .value("Average", average))
+                    .foregroundStyle(.orange.opacity(0.7))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text("avg \(Int(average.rounded()))")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
+            }
+        }
+        .chartYScale(domain: 0...10)
+    }
+}
+
 private struct ScoreTrendRow: View {
     let session: PracticeSession
     let score: Int
 
-    private var dayTitle: String {
-        ProgramContent.days.first(where: { $0.id == session.day })?.title ?? "Day \(session.day)"
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Day \(session.day): \(dayTitle)")
+                Text(rowTitle)
                     .font(.caption)
                     .lineLimit(1)
                 Spacer()
                 Text("\(score)/10")
                     .font(.caption.monospacedDigit().bold())
-                    .foregroundStyle(scoreColor)
+                    .foregroundStyle(qualityColor(score))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(.quaternary)
                     Capsule()
-                        .fill(scoreColor)
+                        .fill(qualityColor(score))
                         .frame(width: max(4, geo.size.width * Double(score) / 10))
                 }
             }
@@ -89,8 +134,12 @@ private struct ScoreTrendRow: View {
         }
     }
 
-    private var scoreColor: Color {
-        score >= 7 ? .green : score >= 4 ? .orange : .red
+    private var rowTitle: String {
+        var title = ProgramContent.days.first(where: { $0.id == session.day })?.title ?? "Day \(session.day)"
+        if let date = session.completedAt {
+            title += " · " + date.formatted(date: .abbreviated, time: .omitted)
+        }
+        return title
     }
 }
 

@@ -1,5 +1,12 @@
 import Foundation
 
+/// One plotted score in the Progress time-series chart.
+struct ScorePoint: Identifiable, Equatable {
+    let id = UUID()
+    let date: Date
+    let score: Int
+}
+
 @MainActor
 final class ProgramProgressViewModel: ObservableObject {
     @Published private(set) var completedSessions: [PracticeSession] = []
@@ -45,6 +52,15 @@ final class ProgramProgressViewModel: ObservableObject {
         let values = scoredSessions.map(\.score)
         guard !values.isEmpty else { return nil }
         return Double(values.reduce(0, +)) / Double(values.count)
+    }
+
+    /// Same scored sessions as `scoredSessions`, but ordered by when the drill
+    /// actually happened (all attempts, multiple per day allowed) so the chart
+    /// reads as a true time series rather than a day-indexed list.
+    var scoredOverTime: [ScorePoint] {
+        scoredSessions
+            .map { ScorePoint(date: $0.session.completedAt ?? $0.session.createdAt, score: $0.score) }
+            .sorted { $0.date < $1.date }
     }
 
     func refresh() async {
