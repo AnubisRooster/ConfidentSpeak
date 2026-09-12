@@ -38,6 +38,8 @@ targets:
         CFBundleVersion: "1"
         CFBundleShortVersionString: "0.1.0"
         UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
         UIApplicationSupportsIndirectInputEvents: true
         NSMicrophoneUsageDescription: "ConfidentSpeak records short practice clips so it can measure your pace and give feedback."
         NSSpeechRecognitionUsageDescription: "ConfidentSpeak transcribes your practice clips on-device to measure pace, filler words, and pauses."
